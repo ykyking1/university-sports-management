@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.FacilityDTO;
 import com.example.demo.entity.Facility;
 import com.example.demo.repository.FacilityRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -40,5 +41,16 @@ public class FacilityService {
     public void delete(Long id) {
         Facility existing = getById(id);
         facilityRepository.delete(existing);
+    }
+
+    public FacilityDTO mapToDTO(Facility facility) {
+        FacilityDTO dto = new FacilityDTO();
+        dto.setId(facility.getId());
+        dto.setName(facility.getName());
+        dto.setType(facility.getType());
+        dto.setCapacity(facility.getCapacity());
+        dto.setHourlyRate(facility.getHourlyRate());
+        dto.setOperatingHours(facility.getOperatingHours());
+        return dto;
     }
 }

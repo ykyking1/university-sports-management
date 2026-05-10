@@ -1,11 +1,13 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.TournamentCreateRequest;
 import com.example.demo.entity.Match;
 import com.example.demo.entity.Team;
 import com.example.demo.entity.Tournament;
 import com.example.demo.enums.MatchStatus;
 import com.example.demo.enums.TournamentFormat;
 import com.example.demo.repository.MatchRepository;
+import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class TournamentService {
 
     private final TournamentRepository tournamentRepository;
     private final MatchRepository matchRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public void generateSchedule(Long tournamentId)
@@ -34,7 +37,10 @@ public class TournamentService {
             throw new RuntimeException("Bu turnuvanın fikstürü zaten oluşturulmuş.");
         }
 
-        List<Team> teams = tournament.getTeams(); //
+        List<Team> teams = tournament.getTeams();
+        if (teams.size() < 2) {
+            throw new RuntimeException("Turnuvada en az 2 takım olmalıdır.");
+        }
         
         // 3. Formata göre ilgili algoritmayı çağır
         if (tournament.getFormat() == TournamentFormat.ROUND_ROBIN) {
@@ -99,5 +105,36 @@ public class TournamentService {
         match.setRoundNumber(round);
         match.setStatus(MatchStatus.SCHEDULED);
         matchRepository.save(match);
+    }
+    @Transactional
+    public Tournament createTournament(TournamentCreateRequest request) {
+        Tournament tournament = new Tournament();
+        tournament.setName(request.getName());
+        tournament.setFormat(request.getFormat());
+        tournament.setStartDate(request.getStartDate());
+        return tournamentRepository.save(tournament);
+    }
+
+    @Transactional
+    public void addTeamToTournament(Long tournamentId, Long teamId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new RuntimeException("Turnuva bulunamadı"));
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("Takım bulunamadı"));
+        if (tournament.getTeams().contains(team)) {
+            throw new RuntimeException("Bu takım zaten turnuvaya kayıtlı.");
+        }
+        tournament.getTeams().add(team);
+        tournamentRepository.save(tournament);
+    }
+
+    public List<Match> getSchedule(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new RuntimeException("Turnuva bulunamadı"));
+        return matchRepository.findByTournament(tournament);
+    }
+
+    public List<Tournament> getAll() {
+        return tournamentRepository.findAll();
     }
 }

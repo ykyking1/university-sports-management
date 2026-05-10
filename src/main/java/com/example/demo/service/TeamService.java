@@ -137,4 +137,17 @@ public class TeamService {
         response.setPlayerCount(team.getPlayers().size());
         return response;
     }
+
+    public List<TeamResponse> getAll() {
+        return teamRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public TeamResponse getById(Long id) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Takım bulunamadı, id: " + id));
+        return mapToResponse(team);
+    }
 }

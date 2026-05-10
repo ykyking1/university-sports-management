@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
@@ -34,5 +36,15 @@ public class TeamController {
     public ResponseEntity<Void> removePlayer(@PathVariable Long teamId, @PathVariable Long playerId) {
         teamService.removePlayerFromTeam(teamId, playerId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<TeamResponse>> getAll() {
+        return ResponseEntity.ok(teamService.getAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TeamResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(teamService.getById(id));
     }
 }
