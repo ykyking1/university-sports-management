@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Üniversite Spor Yönetim Sistemi</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c0f;
+  --bg2: #111318;
+  --bg3: #191c24;
+  --border: #252830;
+  --accent: #c8f135;
+  --accent2: #8fb820;
+  --text: #e8eaf0;
+  --text2: #8b8f9a;
+  --red: #ff4d4d;
+  --blue: #4d9fff;
+  --green: #4dff91;
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif; min-height:100vh; }
+
+/* SIDEBAR */
+.layout { display:flex; min-height:100vh; }
+.sidebar {
+  width:220px; background:var(--bg2); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; position:fixed; height:100vh; z-index:100;
+}
+.sidebar-logo {
+  padding:24px 20px 20px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px; font-weight:800; letter-spacing:.05em;
+  border-bottom:1px solid var(--border);
+  line-height:1.2;
+}
+.sidebar-logo span { color:var(--accent); }
+.sidebar-nav { padding:16px 0; flex:1; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 20px; cursor:pointer; transition:.15s;
+  font-size:14px; font-weight:500; color:var(--text2);
+  border-left:3px solid transparent;
+}
+.nav-item:hover { color:var(--text); background:var(--bg3); }
+.nav-item.active { color:var(--accent); border-left-color:var(--accent); background:var(--bg3); }
+.nav-icon { font-size:18px; width:20px; text-align:center; }
+.sidebar-footer { padding:16px 20px; border-top:1px solid var(--border); font-size:12px; color:var(--text2); }
+
+/* MAIN */
+.main { margin-left:220px; flex:1; padding:32px; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* PAGE HEADER */
+.page-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:28px; }
+.page-title { font-family:'Barlow Condensed',sans-serif; font-size:36px; font-weight:800; letter-spacing:.03em; }
+.page-title span { color:var(--accent); }
+
+/* CARDS */
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+
+/* STAT CARDS */
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+.stat-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px; display:flex; flex-direction:column; gap:6px;
+}
+.stat-label { font-size:12px; color:var(--text2); text-transform:uppercase; letter-spacing:.08em; }
+.stat-value { font-family:'Barlow Condensed',sans-serif; font-size:40px; font-weight:800; color:var(--accent); line-height:1; }
+.stat-sub { font-size:12px; color:var(--text2); }
+
+/* BUTTONS */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 18px; border-radius:7px; font-size:13px; font-weight:600;
+  cursor:pointer; border:none; transition:.15s; font-family:'Barlow',sans-serif;
+}
+.btn-primary { background:var(--accent); color:#0a0c0f; }
+.btn-primary:hover { background:var(--accent2); }
+.btn-secondary { background:var(--bg3); color:var(--text); border:1px solid var(--border); }
+.btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+.btn-danger { background:transparent; color:var(--red); border:1px solid var(--red); }
+.btn-danger:hover { background:var(--red); color:#fff; }
+.btn-sm { padding:5px 12px; font-size:12px; }
+
+/* TABLES */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th { padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text2); border-bottom:1px solid var(--border); font-weight:600; }
+td { padding:12px 14px; border-bottom:1px solid var(--border); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--bg3); }
+
+/* BADGE */
+.badge {
+  display:inline-block; padding:3px 9px; border-radius:20px;
+  font-size:11px; font-weight:600; letter-spacing:.04em;
+}
+.badge-green { background:#4dff9120; color:var(--green); }
+.badge-yellow { background:#c8f13520; color:var(--accent); }
+.badge-red { background:#ff4d4d20; color:var(--red); }
+.badge-blue { background:#4d9fff20; color:var(--blue); }
+.badge-gray { background:#ffffff10; color:var(--text2); }
+
+/* MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0; background:#00000080;
+  z-index:1000; align-items:center; justify-content:center;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--bg2); border:1px solid var(--border); border-radius:14px;
+  padding:28px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto;
+}
+.modal-title { font-family:'Barlow Condensed',sans-serif; font-size:24px; font-weight:800; margin-bottom:20px; }
+
+/* FORM */
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; }
+.form-control {
+  width:100%; padding:10px 12px; background:var(--bg3); border:1px solid var(--border);
+  border-radius:7px; color:var(--text); font-size:14px; font-family:'Barlow',sans-serif;
+  transition:.15s;
+}
+.form-control:focus { outline:none; border-color:var(--accent); }
+select.form-control option { background:var(--bg3); }
+.form-row { display:flex; gap:12px; }
+.form-row .form-group { flex:1; }
+.form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+
+/* ALERT */
+.alert {
+  padding:12px 16px; border-radius:7px; font-size:13px; margin-bottom:16px; display:none;
+}
+.alert.show { display:block; }
+.alert-success { background:#4dff9115; border:1px solid #4dff9140; color:var(--green); }
+.alert-error { background:#ff4d4d15; border:1px solid #ff4d4d40; color:var(--red); }
+
+/* EMPTY STATE */
+.empty { text-align:center; padding:60px 20px; color:var(--text2); }
+.empty-icon { font-size:48px; margin-bottom:12px; }
+.empty-text { font-size:15px; }
+
+/* TEAM CARD */
+.team-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px; transition:.15s;
+}
+.team-card:hover { border-color:var(--accent); }
+.team-name { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; margin-bottom:6px; }
+.team-meta { font-size:12px; color:var(--text2); margin-bottom:14px; }
+.team-actions { display:flex; gap:8px; }
+
+/* MATCH CARD */
+.match-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 20px; display:flex; align-items:center; gap:16px; margin-bottom:10px;
+}
+.match-teams { flex:1; display:flex; align-items:center; gap:12px; }
+.match-team { font-weight:600; font-size:15px; }
+.match-score {
+  font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:800;
+  background:var(--bg3); border:1px solid var(--border); border-radius:7px;
+  padding:4px 16px; min-width:80px; text-align:center;
+}
+.match-vs { color:var(--text2); font-size:12px; font-weight:600; }
+.match-round { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; }
+
+/* STANDINGS TABLE */
+.rank-1 td:first-child { color:var(--accent); font-weight:700; }
+
+/* LOADING */
+.loading { color:var(--text2); font-size:13px; padding:20px; text-align:center; }
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:24px; right:24px; z-index:9999;
+  background:var(--bg3); border:1px solid var(--border); border-radius:9px;
+  padding:12px 18px; font-size:13px; transform:translateY(80px); opacity:0;
+  transition:.3s; max-width:320px;
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { border-color:#4dff9160; color:var(--green); }
+.toast.error { border-color:#ff4d4d60; color:var(--red); }
+
+/* SECTION TITLE */
+.section-title {
+  font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700;
+  color:var(--text2); text-transform:uppercase; letter-spacing:.08em;
+  margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);
+}
+
+/* TAB */
+.tabs { display:flex; gap:4px; margin-bottom:20px; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:4px; width:fit-content; }
+.tab { padding:7px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500; color:var(--text2); transition:.15s; }
+.tab.active { background:var(--accent); color:#0a0c0f; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">ÜNİ<span>SPOR</span><br>YÖNETİM</div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="navigate('dashboard')">
+      <span class="nav-icon">🏠</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="navigate('teams')">
+      <span class="nav-icon">👥</span> Takımlar
+    </div>
+    <div class="nav-item" onclick="navigate('tournaments')">
+      <span class="nav-icon">🏆</span> Turnuvalar
+    </div>
+    <div class="nav-item" onclick="navigate('matches')">
+      <span class="nav-icon">⚽</span> Maçlar
+    </div>
+    <div class="nav-item" onclick="navigate('standings')">
+      <span class="nav-icon">📊</span> Puan Tablosu
+    </div>
+    <div class="nav-item" onclick="navigate('facilities')">
+      <span class="nav-icon">🏟️</span> Tesisler
+    </div>
+  </nav>
+  <div class="sidebar-footer">API: localhost:8080</div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">HOŞ GELDİN, <span>YILDIZ</span></div>
+      <div style="color:var(--text2);font-size:14px;margin-top:4px">Üniversite Spor Yönetim Sistemi</div>
+    </div>
+  </div>
+  <div class="stat-grid" id="dash-stats">
+    <div class="stat-card"><div class="stat-label">Takımlar</div><div class="stat-value" id="stat-teams">—</div></div>
+    <div class="stat-card"><div class="stat-label">Turnuvalar</div><div class="stat-value" id="stat-tournaments">—</div></div>
+    <div class="stat-card"><div class="stat-label">Maçlar</div><div class="stat-value" id="stat-matches">—</div></div>
+    <div class="stat-card"><div class="stat-label">Tesisler</div><div class="stat-value" id="stat-facilities">—</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="card">
+      <div class="section-title">Son Maçlar</div>
+      <div id="dash-matches"><div class="loading">Yükleniyor...</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Turnuvalar</div>
+      <div id="dash-tournaments"><div class="loading">Yükleniyor...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TEAMS -->
+<div id="page-teams" class="page">
+  <div class="page-header">
+    <div class="page-title">TAKIMLAR</div>
+    <button class="btn btn-primary" onclick="openModal('modal-team')">+ Yeni Takım</button>
+  </div>
+  <div class="card-grid" id="teams-list"><div class="loading">Yükleniyor...</div></div>
+</div>
+
+<!-- TOURNAMENTS -->
+<div id="page-tournaments" class="page">
+  <div class="page-header">
+    <div class="page-title">TURNUVALAR</div>
+    <button class="btn btn-primary" onclick="openModal('modal-tournament')">+ Yeni Turnuva</button>
+  </div>
+  <div id="tournaments-list"><div class="loading">Yükleniyor...</div></div>
+</div>
+
+<!-- MATCHES -->
+<div id="page-matches" class="page">
+  <div class="page-header">
+    <div class="page-title">MAÇLAR</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <select class="form-control" id="match-tournament-filter" onchange="loadMatches()" style="width:200px">
+        <option value="">Turnuva Seç</option>
+      </select>
+    </div>
+  </div>
+  <div id="matches-list"><div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">Turnuva seçin</div></div></div>
+</div>
+
+<!-- STANDINGS -->
+<div id="page-standings" class="page">
+  <div class="page-header">
+    <div class="page-title">PUAN TABLOSU</div>
+    <select class="form-control" id="standing-tournament-filter" onchange="loadStandings()" style="width:200px">
+      <option value="">Turnuva Seç</option>
+    </select>
+  </div>
+  <div class="card">
+    <div id="standings-table"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Turnuva seçin</div></div></div>
+  </div>
+</div>
+
+<!-- FACILITIES -->
+<div id="page-facilities" class="page">
+  <div class="page-header">
+    <div class="page-title">TESİSLER</div>
+    <button class="btn btn-primary" onclick="openModal('modal-facility')">+ Yeni Tesis</button>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tesis Adı</th><th>Tür</th><th>Kapasite</th><th>Saatlik Ücret</th><th>Çalışma Saatleri</th><th></th></tr></thead>
+        <tbody id="facilities-table"><tr><td colspan="6" class="loading">Yükleniyor...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MODALS -->
+
+<!-- TEAM MODAL -->
+<div class="modal-overlay" id="modal-team">
+  <div class="modal">
+    <div class="modal-title">Yeni Takım Oluştur</div>
+    <div class="form-group">
+      <label class="form-label">Takım Adı</label>
+      <input class="form-control" id="team-name" placeholder="örn. Fırtına FC">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Oyuncu ID'leri (virgülle ayır)</label>
+      <input class="form-control" id="team-players" placeholder="örn. 1,2,3,4">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kaptan ID (opsiyonel)</label>
+      <input class="form-control" id="team-captain" placeholder="örn. 1">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-team')">İptal</button>
+      <button class="btn btn-primary" onclick="createTeam()">Oluştur</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOURNAMENT MODAL -->
+<div class="modal-overlay" id="modal-tournament">
+  <div class="modal">
+    <div class="modal-title">Yeni Turnuva Oluştur</div>
+    <div class="form-group">
+      <label class="form-label">Turnuva Adı</label>
+      <input class="form-control" id="tournament-name" placeholder="örn. Bahar Kupası 2026">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Format</label>
+      <select class="form-control" id="tournament-format">
+        <option value="ROUND_ROBIN">Round Robin</option>
+        <option value="SINGLE_ELIMINATION">Single Elimination</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Başlangıç Tarihi (opsiyonel)</label>
+      <input type="datetime-local" class="form-control" id="tournament-date">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-tournament')">İptal</button>
+      <button class="btn btn-primary" onclick="createTournament()">Oluştur</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TEAM TO TOURNAMENT MODAL -->
+<div class="modal-overlay" id="modal-add-team">
+  <div class="modal">
+    <div class="modal-title">Turnuvaya Takım Ekle</div>
+    <input type="hidden" id="add-team-tournament-id">
+    <div class="form-group">
+      <label class="form-label">Takım Seç</label>
+      <select class="form-control" id="add-team-select"></select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-team')">İptal</button>
+      <button class="btn btn-primary" onclick="addTeamToTournament()">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- MATCH RESULT MODAL -->
+<div class="modal-overlay" id="modal-result">
+  <div class="modal">
+    <div class="modal-title">Maç Sonucu Gir</div>
+    <input type="hidden" id="result-match-id">
+    <div style="font-size:14px;color:var(--text2);margin-bottom:16px" id="result-match-info"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" id="result-home-label">Ev Sahibi Gol</label>
+        <input type="number" class="form-control" id="result-home" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="result-away-label">Deplasman Gol</label>
+        <input type="number" class="form-control" id="result-away" value="0" min="0">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-result')">İptal</button>
+      <button class="btn btn-primary" onclick="submitResult()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- FACILITY MODAL -->
+<div class="modal-overlay" id="modal-facility">
+  <div class="modal">
+    <div class="modal-title">Tesis Ekle / Düzenle</div>
+    <input type="hidden" id="facility-id">
+    <div class="form-group">
+      <label class="form-label">Tesis Adı</label>
+      <input class="form-control" id="facility-name" placeholder="örn. Spor Salonu A">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tür</label>
+        <input class="form-control" id="facility-type" placeholder="örn. Kapalı">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kapasite</label>
+        <input type="number" class="form-control" id="facility-capacity" value="100">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Saatlik Ücret (₺)</label>
+        <input type="number" class="form-control" id="facility-rate" value="150">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Çalışma Saatleri</label>
+        <input class="form-control" id="facility-hours" placeholder="08:00-22:00">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-facility')">İptal</button>
+      <button class="btn btn-primary" onclick="saveFacility()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:8080/api';
+
+// ─── NAVIGATION ────────────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'teams') loadTeams();
+  if (page === 'tournaments') loadTournaments();
+  if (page === 'matches') loadTournamentFilters('match-tournament-filter');
+  if (page === 'standings') loadTournamentFilters('standing-tournament-filter');
+  if (page === 'facilities') loadFacilities();
+}
+
+// ─── API ────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  try {
+    const res = await fetch(API + path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(txt || res.statusText);
+    }
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } catch (e) {
+    throw e;
+  }
+}
+
+// ─── TOAST ─────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── MODALS ────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ─── DASHBOARD ─────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [teams, tournaments, facilities] = await Promise.all([
+      api('GET', '/teams'),
+      api('GET', '/tournaments'),
+      api('GET', '/facilities')
+    ]);
+    document.getElementById('stat-teams').textContent = teams?.length ?? '—';
+    document.getElementById('stat-tournaments').textContent = tournaments?.length ?? '—';
+    document.getElementById('stat-facilities').textContent = facilities?.length ?? '—';
+
+    // Dashboard tournaments
+    const tEl = document.getElementById('dash-tournaments');
+    if (!tournaments?.length) {
+      tEl.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">Henüz turnuva yok</div></div>';
+    } else {
+      tEl.innerHTML = tournaments.slice(0,5).map(t => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-weight:600;font-size:14px">${t.name}</div>
+            <div style="font-size:12px;color:var(--text2)">${t.format === 'ROUND_ROBIN' ? 'Round Robin' : 'Single Elimination'}</div>
+          </div>
+          <span class="badge ${t.scheduleGenerated ? 'badge-green' : 'badge-yellow'}">${t.scheduleGenerated ? 'Fikstür Hazır' : 'Beklemede'}</span>
+        </div>
+      `).join('');
+    }
+
+    // Stat matches - try first tournament
+    let matchCount = 0;
+    if (tournaments?.length) {
+      for (const t of tournaments.slice(0,3)) {
+        try {
+          const m = await api('GET', `/matches/tournament/${t.id}`);
+          matchCount += m?.length || 0;
+        } catch(e) {}
+      }
+    }
+    document.getElementById('stat-matches').textContent = matchCount;
+
+    // Dashboard matches
+    const mEl = document.getElementById('dash-matches');
+    if (matchCount === 0) {
+      mEl.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">Henüz maç yok</div></div>';
+    } else {
+      let allMatches = [];
+      for (const t of tournaments.slice(0,3)) {
+        try {
+          const m = await api('GET', `/matches/tournament/${t.id}`);
+          allMatches = allMatches.concat(m || []);
+        } catch(e) {}
+      }
+      mEl.innerHTML = allMatches.slice(0,4).map(m => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <div>${m.homeTeamName} <span style="color:var(--text2)">vs</span> ${m.awayTeamName}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${m.status === 'COMPLETED' ? `<span style="font-weight:700">${m.homeScore}-${m.awayScore}</span>` : ''}
+            <span class="badge ${m.status === 'COMPLETED' ? 'badge-green' : m.status === 'CANCELLED' ? 'badge-red' : 'badge-yellow'}">${statusLabel(m.status)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// ─── TEAMS ─────────────────────────────────────────────────────
+async function loadTeams() {
+  const el = document.getElementById('teams-list');
+  try {
+    const teams = await api('GET', '/teams');
+    if (!teams?.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Henüz takım yok. Yeni takım oluşturun.</div></div>';
+      return;
+    }
+    el.innerHTML = teams.map(t => `
+      <div class="team-card">
+        <div class="team-name">${t.name}</div>
+        <div class="team-meta">👤 ${t.playerCount} oyuncu ${t.captainId ? '· Kaptan: #' + t.captainId : ''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+          ${t.playerIds.map(id => `<span class="badge badge-gray">#${id}</span>`).join('')}
+        </div>
+        <div class="team-actions">
+          <button class="btn btn-secondary btn-sm" onclick="openAddPlayerModal(${t.id})">+ Oyuncu Ekle</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Yüklenemedi: ${e.message}</div></div>`;
+  }
+}
+
+async function createTeam() {
+  const name = document.getElementById('team-name').value.trim();
+  const playersRaw = document.getElementById('team-players').value.trim();
+  const captainRaw = document.getElementById('team-captain').value.trim();
+  if (!name || !playersRaw) return toast('Ad ve oyuncu ID gerekli', 'error');
+  const playerIds = playersRaw.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+  const body = { name, playerIds };
+  if (captainRaw) body.captainId = parseInt(captainRaw);
+  try {
+    await api('POST', '/teams', body);
+    toast('Takım oluşturuldu ✓');
+    closeModal('modal-team');
+    document.getElementById('team-name').value = '';
+    document.getElementById('team-players').value = '';
+    document.getElementById('team-captain').value = '';
+    loadTeams();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openAddPlayerModal(teamId) {
+  const pid = prompt('Eklenecek oyuncunun ID\'sini girin:');
+  if (!pid) return;
+  api('POST', `/teams/${teamId}/players/${parseInt(pid)}`).then(() => {
+    toast('Oyuncu eklendi ✓');
+    loadTeams();
+  }).catch(e => toast(e.message, 'error'));
+}
+
+// ─── TOURNAMENTS ───────────────────────────────────────────────
+async function loadTournaments() {
+  const el = document.getElementById('tournaments-list');
+  try {
+    const tournaments = await api('GET', '/tournaments');
+    if (!tournaments?.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">Henüz turnuva yok.</div></div>';
+      return;
+    }
+    el.innerHTML = tournaments.map(t => `
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800">${t.name}</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:2px">
+              ${t.format === 'ROUND_ROBIN' ? '🔄 Round Robin' : '⚡ Single Elimination'}
+              · ${t.teams?.length || 0} takım
+            </div>
+          </div>
+          <span class="badge ${t.scheduleGenerated ? 'badge-green' : 'badge-yellow'}">${t.scheduleGenerated ? 'Fikstür Hazır' : 'Beklemede'}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+          ${(t.teams || []).map(team => `<span class="badge badge-blue">👥 ${team.name}</span>`).join('')}
+          ${!(t.teams?.length) ? '<span style="font-size:12px;color:var(--text2)">Henüz takım eklenmedi</span>' : ''}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="openAddTeamModal(${t.id})">+ Takım Ekle</button>
+          ${!t.scheduleGenerated ? `<button class="btn btn-primary btn-sm" onclick="generateSchedule(${t.id})">⚡ Fikstür Oluştur</button>` : ''}
+          ${t.scheduleGenerated ? `<button class="btn btn-secondary btn-sm" onclick="viewSchedule(${t.id}, '${t.name}')">📋 Fikstürü Gör</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Yüklenemedi</div></div>`;
+  }
+}
+
+async function createTournament() {
+  const name = document.getElementById('tournament-name').value.trim();
+  const format = document.getElementById('tournament-format').value;
+  const date = document.getElementById('tournament-date').value;
+  if (!name) return toast('Turnuva adı gerekli', 'error');
+  const body = { name, format };
+  if (date) body.startDate = date;
+  try {
+    await api('POST', '/tournaments', body);
+    toast('Turnuva oluşturuldu ✓');
+    closeModal('modal-tournament');
+    document.getElementById('tournament-name').value = '';
+    loadTournaments();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function openAddTeamModal(tournamentId) {
+  document.getElementById('add-team-tournament-id').value = tournamentId;
+  try {
+    const teams = await api('GET', '/teams');
+    const sel = document.getElementById('add-team-select');
+    sel.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    openModal('modal-add-team');
+  } catch(e) { toast('Takımlar yüklenemedi', 'error'); }
+}
+
+async function addTeamToTournament() {
+  const tId = document.getElementById('add-team-tournament-id').value;
+  const teamId = document.getElementById('add-team-select').value;
+  try {
+    await api('POST', `/tournaments/${tId}/teams/${teamId}`);
+    toast('Takım eklendi ✓');
+    closeModal('modal-add-team');
+    loadTournaments();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function generateSchedule(id) {
+  try {
+    await api('POST', `/tournaments/${id}/generate-schedule`);
+    toast('Fikstür oluşturuldu ✓');
+    loadTournaments();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function viewSchedule(id, name) {
+  navigate('matches');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[3].classList.add('active');
+  await loadTournamentFilters('match-tournament-filter');
+  document.getElementById('match-tournament-filter').value = id;
+  loadMatches();
+}
+
+// ─── MATCHES ───────────────────────────────────────────────────
+async function loadTournamentFilters(selId) {
+  try {
+    const tournaments = await api('GET', '/tournaments');
+    const sel = document.getElementById(selId);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Turnuva Seç</option>' +
+      (tournaments || []).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    if (cur) sel.value = cur;
+  } catch(e) {}
+}
+
+async function loadMatches() {
+  const tId = document.getElementById('match-tournament-filter').value;
+  const el = document.getElementById('matches-list');
+  if (!tId) { el.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">Turnuva seçin</div></div>'; return; }
+  try {
+    const matches = await api('GET', `/matches/tournament/${tId}`);
+    if (!matches?.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">Bu turnuvaya ait maç yok</div></div>';
+      return;
+    }
+    el.innerHTML = matches.map(m => `
+      <div class="match-card">
+        <div class="match-round">Tur ${m.roundNumber}</div>
+        <div class="match-teams">
+          <div class="match-team">${m.homeTeamName}</div>
+          <div class="match-score">${m.status === 'COMPLETED' ? m.homeScore + ' - ' + m.awayScore : 'vs'}</div>
+          <div class="match-team">${m.awayTeamName}</div>
+        </div>
+        <span class="badge ${m.status === 'COMPLETED' ? 'badge-green' : m.status === 'CANCELLED' ? 'badge-red' : 'badge-yellow'}">${statusLabel(m.status)}</span>
+        ${m.status === 'SCHEDULED' ? `<button class="btn btn-primary btn-sm" onclick="openResultModal(${m.id},'${m.homeTeamName}','${m.awayTeamName}')">Sonuç Gir</button>` : ''}
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Yüklenemedi</div></div>`;
+  }
+}
+
+function openResultModal(matchId, home, away) {
+  document.getElementById('result-match-id').value = matchId;
+  document.getElementById('result-match-info').textContent = home + ' vs ' + away;
+  document.getElementById('result-home-label').textContent = home + ' Gol';
+  document.getElementById('result-away-label').textContent = away + ' Gol';
+  document.getElementById('result-home').value = 0;
+  document.getElementById('result-away').value = 0;
+  openModal('modal-result');
+}
+
+async function submitResult() {
+  const matchId = parseInt(document.getElementById('result-match-id').value);
+  const homeScore = parseInt(document.getElementById('result-home').value);
+  const awayScore = parseInt(document.getElementById('result-away').value);
+  try {
+    await api('POST', '/matches/result', { matchId, homeScore, awayScore });
+    toast('Sonuç kaydedildi ✓');
+    closeModal('modal-result');
+    loadMatches();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─── STANDINGS ─────────────────────────────────────────────────
+async function loadStandings() {
+  const tId = document.getElementById('standing-tournament-filter').value;
+  const el = document.getElementById('standings-table');
+  if (!tId) { el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Turnuva seçin</div></div>'; return; }
+  try {
+    const standings = await api('GET', `/matches/standings/${tId}`);
+    if (!standings?.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Henüz sonuç girilmemiş</div></div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>P</th></tr></thead>
+          <tbody>
+            ${standings.map((s, i) => `
+              <tr class="${i === 0 ? 'rank-1' : ''}">
+                <td>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i+1}</td>
+                <td style="font-weight:600">${s.teamName}</td>
+                <td>${s.played}</td>
+                <td style="color:var(--green)">${s.wins}</td>
+                <td>${s.draws}</td>
+                <td style="color:var(--red)">${s.losses}</td>
+                <td>${s.goalsScored}</td>
+                <td>${s.goalsConceded}</td>
+                <td><strong style="color:var(--accent);font-size:16px">${s.points}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Yüklenemedi</div></div>`;
+  }
+}
+
+// ─── FACILITIES ────────────────────────────────────────────────
+async function loadFacilities() {
+  const tbody = document.getElementById('facilities-table');
+  try {
+    const facilities = await api('GET', '/facilities');
+    if (!facilities?.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="empty-icon">🏟️</div><div class="empty-text">Henüz tesis yok</div></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = facilities.map(f => `
+      <tr>
+        <td style="font-weight:600">${f.name}</td>
+        <td>${f.type || '—'}</td>
+        <td>${f.capacity}</td>
+        <td>₺${f.hourlyRate}/sa</td>
+        <td>${f.operatingHours || '—'}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" onclick="editFacility(${JSON.stringify(f).replace(/"/g,'&quot;')})">Düzenle</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFacility(${f.id})">Sil</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6">Yüklenemedi</td></tr>';
+  }
+}
+
+function editFacility(f) {
+  document.getElementById('facility-id').value = f.id;
+  document.getElementById('facility-name').value = f.name;
+  document.getElementById('facility-type').value = f.type || '';
+  document.getElementById('facility-capacity').value = f.capacity;
+  document.getElementById('facility-rate').value = f.hourlyRate;
+  document.getElementById('facility-hours').value = f.operatingHours || '';
+  openModal('modal-facility');
+}
+
+async function saveFacility() {
+  const id = document.getElementById('facility-id').value;
+  const body = {
+    name: document.getElementById('facility-name').value,
+    type: document.getElementById('facility-type').value,
+    capacity: parseInt(document.getElementById('facility-capacity').value),
+    hourlyRate: parseFloat(document.getElementById('facility-rate').value),
+    operatingHours: document.getElementById('facility-hours').value
+  };
+  try {
+    if (id) await api('PUT', `/facilities/${id}`, body);
+    else await api('POST', '/facilities', body);
+    toast('Tesis kaydedildi ✓');
+    closeModal('modal-facility');
+    document.getElementById('facility-id').value = '';
+    document.getElementById('facility-name').value = '';
+    loadFacilities();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteFacility(id) {
+  if (!confirm('Bu tesisi silmek istediğinizden emin misiniz?')) return;
+  try {
+    await api('DELETE', `/facilities/${id}`);
+    toast('Tesis silindi');
+    loadFacilities();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─── HELPERS ───────────────────────────────────────────────────
+function statusLabel(s) {
+  return { SCHEDULED:'Planlandı', COMPLETED:'Tamamlandı', CANCELLED:'İptal', IN_PROGRESS:'Devam Ediyor' }[s] || s;
+}
+
+// ─── INIT ──────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
