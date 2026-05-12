@@ -2,11 +2,13 @@ package com.example.demo.service;
 
 import com.example.demo.dto.TournamentCreateRequest;
 import com.example.demo.entity.Match;
+import com.example.demo.entity.Standing;
 import com.example.demo.entity.Team;
 import com.example.demo.entity.Tournament;
 import com.example.demo.enums.MatchStatus;
 import com.example.demo.enums.TournamentFormat;
 import com.example.demo.repository.MatchRepository;
+import com.example.demo.repository.StandingRepository;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class TournamentService {
     private final TournamentRepository tournamentRepository;
     private final MatchRepository matchRepository;
     private final TeamRepository teamRepository;
+    private final StandingRepository standingRepository;
 
     @Transactional
     public void generateSchedule(Long tournamentId)
@@ -136,5 +139,22 @@ public class TournamentService {
 
     public List<Tournament> getAll() {
         return tournamentRepository.findAll();
+    }
+
+    @Transactional
+    public void deleteTournament(Long id) {
+        Tournament tournament = tournamentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Turnuva bulunamadı"));
+
+        // Önce standings sil
+        List<Standing> standings = standingRepository.findByTournamentOrderByPointsDesc(tournament);
+        standingRepository.deleteAll(standings);
+
+        // Sonra maçları sil
+        List<Match> matches = matchRepository.findByTournament(tournament);
+        matchRepository.deleteAll(matches);
+
+        // Son olarak turnuvayı sil
+        tournamentRepository.delete(tournament);
     }
 }

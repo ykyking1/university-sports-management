@@ -53,4 +53,11 @@ public class TournamentController {
     public ResponseEntity<List<Match>> getSchedule(@PathVariable Long id) {
         return ResponseEntity.ok(tournamentService.getSchedule(id));
     }
+
+    // Turnuva sil
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTournament(@PathVariable Long id) {
+        tournamentService.deleteTournament(id);
+        return ResponseEntity.noContent().build();
+    }
 }

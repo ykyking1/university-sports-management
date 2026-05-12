@@ -5,6 +5,7 @@ import com.example.demo.dto.MatchResultRequest;
 import com.example.demo.dto.StandingResponse;
 import com.example.demo.entity.Match;
 import com.example.demo.entity.Standing;
+import com.example.demo.entity.Team;
 import com.example.demo.entity.Tournament;
 import com.example.demo.enums.MatchStatus;
 import com.example.demo.enums.TournamentFormat;
@@ -34,30 +35,65 @@ public class MatchService {
     @Transactional
     public MatchResponse submitResult(MatchResultRequest request) {
         Match match = matchRepository.findById(request.getMatchId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Maç bulunamadı, id: " + request.getMatchId()));
+                .orElseThrow(() -> new EntityNotFoundException("Maç bulunamadı, id: " + request.getMatchId()));
 
         if (match.getStatus() == MatchStatus.COMPLETED) {
-            throw new RuntimeException("Bu maçın sonucu zaten girilmiş, tekrar güncellenemez.");
+            throw new RuntimeException("Bu maçın sonucu zaten girilmiş.");
         }
-
         if (match.getStatus() == MatchStatus.CANCELLED) {
             throw new RuntimeException("İptal edilmiş bir maça sonuç girilemez.");
         }
 
-        // Skorları kaydet
         match.setHomeScore(request.getHomeScore());
         match.setAwayScore(request.getAwayScore());
         match.setStatus(MatchStatus.COMPLETED);
         matchRepository.save(match);
 
-        // Puan tablosunu güncelle
         updateStandings(match);
 
-        // Single Elimination ise kaybeden takımı eleme kontrolü yapılabilir
-        // (Kişi 3'ün oluşturduğu maç listesini bozmamak için sadece standing güncelliyoruz)
+        // Single Elimination: kazananı sonraki tura taşı
+        if (match.getTournament().getFormat() == TournamentFormat.SINGLE_ELIMINATION) {
+            advanceWinner(match);
+        }
 
         return toMatchResponse(match);
+    }
+
+    private void advanceWinner(Match match) {
+        Tournament tournament = match.getTournament();
+
+        // Aynı turdaki tüm maçları al
+        int currentRound = match.getRoundNumber();
+        List<Match> currentRoundMatches = matchRepository.findByTournament(tournament)
+                .stream()
+                .filter(m -> m.getRoundNumber() == currentRound)
+                .toList();
+
+        // Tüm maçlar tamamlandı mı kontrol et
+        boolean allDone = currentRoundMatches.stream()
+                .allMatch(m -> m.getStatus() == MatchStatus.COMPLETED);
+
+        if (!allDone) return; // Henüz bekleyen maçlar var
+
+        // Kazananları topla
+        List<Team> winners = currentRoundMatches.stream()
+                .map(m -> m.getHomeScore() >= m.getAwayScore() ? m.getHomeTeam() : m.getAwayTeam())
+                .toList();
+
+        // Tek kazanan kaldıysa turnuva bitti
+        if (winners.size() == 1) return;
+
+        // Sonraki turu oluştur
+        int nextRound = currentRound + 1;
+        for (int i = 0; i < winners.size() - 1; i += 2) {
+            Match nextMatch = new Match();
+            nextMatch.setTournament(tournament);
+            nextMatch.setHomeTeam(winners.get(i));
+            nextMatch.setAwayTeam(winners.get(i + 1));
+            nextMatch.setRoundNumber(nextRound);
+            nextMatch.setStatus(MatchStatus.SCHEDULED);
+            matchRepository.save(nextMatch);
+        }
     }
 
     /**

@@ -150,4 +150,11 @@ public class TeamService {
                 .orElseThrow(() -> new EntityNotFoundException("Takım bulunamadı, id: " + id));
         return mapToResponse(team);
     }
+
+    @Transactional
+    public void deleteTeam(Long id) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Takım bulunamadı"));
+        teamRepository.delete(team);
+    }
 }

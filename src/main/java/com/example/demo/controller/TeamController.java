@@ -47,4 +47,11 @@ public class TeamController {
     public ResponseEntity<TeamResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(teamService.getById(id));
     }
+
+    // Takım sil
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
+        teamService.deleteTeam(id);
+        return ResponseEntity.noContent().build();
+    }
 }
